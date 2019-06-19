@@ -59,6 +59,9 @@ public class TxNamespaceHandlerTests {
 		assertTrue("testBean is not a proxy", AopUtils.isAopProxy(bean));
 	}
 
+	/**
+	 * 提交事务
+	 */
 	@Test
 	public void invokeTransactional() {
 		ITestBean testBean = getTestBean();
@@ -86,6 +89,9 @@ public class TxNamespaceHandlerTests {
 		}
 	}
 
+	/**
+	 * 回滚事务
+	 */
 	@Test
 	public void rollbackRules() {
 		TransactionInterceptor txInterceptor = (TransactionInterceptor) context.getBean("txRollbackAdvice");

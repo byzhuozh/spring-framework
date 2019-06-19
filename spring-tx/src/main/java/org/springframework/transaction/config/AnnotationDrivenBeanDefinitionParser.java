@@ -49,6 +49,8 @@ import org.springframework.util.ClassUtils;
  * @author Chris Beams
  * @author Stephane Nicoll
  * @since 2.0
+ *
+ * 解析 @Transactional 注解的解析器
  */
 class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
 

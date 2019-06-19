@@ -44,6 +44,8 @@ import org.springframework.util.xml.DomUtils;
  * @author Adrian Colyer
  * @author Chris Beams
  * @since 2.0
+ *
+ * 解析 <tx:method /> XML 配置的解析器
  */
 class TxAdviceBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 

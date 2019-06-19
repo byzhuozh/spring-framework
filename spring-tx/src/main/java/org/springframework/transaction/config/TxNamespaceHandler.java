@@ -36,6 +36,8 @@ import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
  * @author Rob Harrop
  * @author Juergen Hoeller
  * @since 2.0
+ *
+ * Transaction 自定义标签的 NamespaceHandler 实现类
  */
 public class TxNamespaceHandler extends NamespaceHandlerSupport {
 
