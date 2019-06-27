@@ -530,20 +530,34 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			throws BeanCreationException {
 
 		// Instantiate the bean.
+		// 实例化bean
 		BeanWrapper instanceWrapper = null;
 		if (mbd.isSingleton()) {
+			//移除BeanWrapper缓存
 			instanceWrapper = this.factoryBeanInstanceCache.remove(beanName);
 		}
 		if (instanceWrapper == null) {
+			//如果没实例化则创建新的BeanWrapper
+			//如果是通过构造器注入，这里是一个关键点
+			/**
+			 * 因为在A初始化的时候发现构造函数依赖B，就会去实例化B，
+			 * 然后B也会运行到这段逻辑，构造函数中发现依赖A，
+			 * 这个时候就会抛出循环依赖的异常
+			 */
 			instanceWrapper = createBeanInstance(beanName, mbd, args);
 		}
+
+		//获得bean 实例
 		final Object bean = instanceWrapper.getWrappedInstance();
+
+		//获取实例化对象的类型
 		Class<?> beanType = instanceWrapper.getWrappedClass();
 		if (beanType != NullBean.class) {
 			mbd.resolvedTargetType = beanType;
 		}
 
 		// Allow post-processors to modify the merged bean definition.
+		// 调用PostProcessor后置处理器
 		synchronized (mbd.postProcessingLock) {
 			if (!mbd.postProcessed) {
 				try {
@@ -559,20 +573,27 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		// Eagerly cache singletons to be able to resolve circular references
 		// even when triggered by lifecycle interfaces like BeanFactoryAware.
+		// 下面代码是为了解决循环依赖的问题
+		//如果当前是单例，并且allowCircularReferences为true(默认就是true，除非我们不希望Spring帮我们解决)
 		boolean earlySingletonExposure = (mbd.isSingleton() && this.allowCircularReferences &&
 				isSingletonCurrentlyInCreation(beanName));
+		//提前曝光bean
 		if (earlySingletonExposure) {
 			if (logger.isTraceEnabled()) {
 				logger.trace("Eagerly caching bean '" + beanName +
 						"' to allow for resolving potential circular references");
 			}
+			//这里是重点, 将 bean  添加到三级缓存中
 			addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
 		}
 
 		// Initialize the bean instance.
 		Object exposedObject = bean;
 		try {
+			//实例化后，需要进行依赖注入
 			populateBean(beanName, mbd, instanceWrapper);
+
+			// 这里就是处理 bean 初始化完成后的各种回调，例如 init-method 配置，BeanPostProcessor接口
 			exposedObject = initializeBean(beanName, exposedObject, mbd);
 		}
 		catch (Throwable ex) {
@@ -586,8 +607,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		if (earlySingletonExposure) {
+			//如果已经提交曝光了bean,那么就从缓存中获取bean
 			Object earlySingletonReference = getSingleton(beanName, false);
 			if (earlySingletonReference != null) {
+				//根据名称获取的以注册的Bean和正在实例化的Bean是同一个
 				if (exposedObject == bean) {
 					exposedObject = earlySingletonReference;
 				}
@@ -599,6 +622,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 							actualDependentBeans.add(dependentBean);
 						}
 					}
+					// 出现循环依赖
 					if (!actualDependentBeans.isEmpty()) {
 						throw new BeanCurrentlyInCreationException(beanName,
 								"Bean with name '" + beanName + "' has been injected into other beans [" +

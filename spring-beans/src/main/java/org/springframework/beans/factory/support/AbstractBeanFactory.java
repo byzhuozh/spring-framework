@@ -243,7 +243,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		Object bean;
 
 		// Eagerly check singleton cache for manually registered singletons.
+		//尝试获取单例对象，因为spring大部分的 bean都是单例的，所以这里先尝试能否获取。
 		Object sharedInstance = getSingleton(beanName);
+		//单例存在的情况下，那么beanName返回的肯定是单例类，但是这里还需要判断是不是FactoryBean
 		if (sharedInstance != null && args == null) {
 			if (logger.isTraceEnabled()) {
 				if (isSingletonCurrentlyInCreation(beanName)) {
@@ -254,10 +256,13 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					logger.trace("Returning cached instance of singleton bean '" + beanName + "'");
 				}
 			}
+			// FactoryBean应该返回getObject()对象
 			bean = getObjectForBeanInstance(sharedInstance, name, beanName, null);
 		}
 
 		else {
+			//走到这里，有可能beanName是单例模式，但之前并没有实例化，或者是Prototype类型。
+			//首先判断不是循环依赖，这里的循环依赖指的是Prototype类型
 			// Fail if we're already creating this bean instance:
 			// We're assumably within a circular reference.
 			if (isPrototypeCurrentlyInCreation(beanName)) {
@@ -314,6 +319,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				}
 
 				// Create bean instance.
+				// 如果是单例，则创建单例模式
 				if (mbd.isSingleton()) {
 					sharedInstance = getSingleton(beanName, () -> {
 						try {
@@ -330,14 +336,19 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					bean = getObjectForBeanInstance(sharedInstance, name, beanName, mbd);
 				}
 
+				// 原型模式，则创建一个新对象.
 				else if (mbd.isPrototype()) {
 					// It's a prototype -> create a new instance.
 					Object prototypeInstance = null;
 					try {
+					 	/** 这里是Prototype循环依赖的问题，会记录在map中beanName，
+						 * 如果在解决当前Bean的依赖过程中还依赖当前Bean，则说明了出现了循环依赖
+						 */
 						beforePrototypeCreation(beanName);
 						prototypeInstance = createBean(beanName, mbd, args);
 					}
 					finally {
+						//对应beforePrototypeCreation()，从 map中移除
 						afterPrototypeCreation(beanName);
 					}
 					bean = getObjectForBeanInstance(prototypeInstance, name, beanName, mbd);
