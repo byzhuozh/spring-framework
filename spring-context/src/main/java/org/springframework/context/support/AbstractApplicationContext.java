@@ -512,36 +512,45 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	public void refresh() throws BeansException, IllegalStateException {
 		synchronized (this.startupShutdownMonitor) {
 			// Prepare this context for refreshing.
-			prepareRefresh();
+			prepareRefresh();	// 刷新前的准备 工作：涉及属性的设置以及属性资源的 初始化
 
 			// Tell the subclass to refresh the internal bean factory.
+			// 创建和初始化 IOC 容器的 BeanFactory
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
+			// 配置 工厂的 标准上下文特性，例如 上下文的 ClassLoader 和 post-processors
 			// Prepare the bean factory for use in this context.
 			prepareBeanFactory(beanFactory);
 
 			try {
+				//在 应用上下文 子类中 增加 后处理（post-processing） 的 bean 工厂
 				// Allows post-processing of the bean factory in context subclasses.
 				postProcessBeanFactory(beanFactory);
 
+				// 在应用上下文中调用所有 已注册的 BeanFactoryPostProcesser 作为 bean
 				// Invoke factory processors registered as beans in the context.
 				invokeBeanFactoryPostProcessors(beanFactory);
 
+				// 注册具有拦截功能的 bean processors
 				// Register bean processors that intercept bean creation.
 				registerBeanPostProcessors(beanFactory);
 
 				// Initialize message source for this context.
 				initMessageSource();
 
+				// 为应用上下文 初始化 事件 多路广播
 				// Initialize event multicaster for this context.
 				initApplicationEventMulticaster();
 
+				// 初始化其他特殊的 bean
 				// Initialize other special beans in specific context subclasses.
 				onRefresh();
 
+				// 检查 监听器 相关的 bean ，并注册他们
 				// Check for listener beans and register them.
 				registerListeners();
 
+				//实例化所有剩余的单例 bean (非 懒 初始化)
 				// Instantiate all remaining (non-lazy-init) singletons.
 				finishBeanFactoryInitialization(beanFactory);
 
@@ -619,6 +628,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * @see #getBeanFactory()
 	 */
 	protected ConfigurableListableBeanFactory obtainFreshBeanFactory() {
+		/**  template method 模式：不同的子类有不同的实现  begin**/
 		refreshBeanFactory();
 		return getBeanFactory();
 	}
